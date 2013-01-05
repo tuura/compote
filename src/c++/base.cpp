@@ -117,7 +117,7 @@ namespace bdd
 		if (it == table.end()) 
 		{
 			res = new Node(node);
-			printNodeID(getNodeID(res), "New node created: ");
+			// printNodeID(getNodeID(res), "New node created: ");
 			table.insert(res);
 			deadCount++; // Node is initially dead (it will soon be revived by referencing).
 		}
@@ -223,7 +223,7 @@ namespace bdd
 
 	void Base::referenceNode(Node *node)
 	{
-		printNodeID(getNodeID(node), "Referencing ");
+		// printNodeID(getNodeID(node), "Referencing ");
 		assert(node);
 		if (node == &sink) return;
 
@@ -239,7 +239,7 @@ namespace bdd
 
 	void Base::dereferenceNode(Node *node)
 	{
-		printNodeID(getNodeID(node), "Dereferencing ");
+		// printNodeID(getNodeID(node), "Dereferencing ");
 		assert(node);
 		if (node == &sink) return;
 
@@ -274,7 +274,7 @@ namespace bdd
 				continue;
 			}
 
-			printNodeID(getNodeID(node), "Node deleted: ");
+			// printNodeID(getNodeID(node), "Node deleted: ");
 			delete node;
 			it = table.erase(it);
 			deadCount--;
@@ -292,7 +292,7 @@ namespace bdd
 		for(auto it = table.begin(); it != table.end(); )
 		{
 			Node *node = *it;
-			printNodeID(getNodeID(node), "Node deleted: ");
+			// printNodeID(getNodeID(node), "Node deleted: ");
 			delete node;
 			it = table.erase(it);
 		}

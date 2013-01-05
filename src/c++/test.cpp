@@ -1,17 +1,17 @@
 /*
-  Author: Andrey Mokhov, Newcastle University
-  Date: 19 December 2012
-  Contact: andrey.mokhov@ncl.ac.uk
-  Description: Testing BDD implementation.
+	Author: Andrey Mokhov, Newcastle University
+	Date: 19 December 2012
+	Contact: andrey.mokhov@{ncl.ac.uk, gmail.com}
+	Description: Testing BDD implementation.
 */
 
 #include <cstdio>
-#include "bdd.h"
+#include "base.h"
 #include "node.h"
 
 using namespace bdd;
 
-BDD b;
+Base b;
 
 int cnt = 0;
 
@@ -115,6 +115,8 @@ int main()
 
 	test(b.size() == 0);
 	test(b.sizeDead() == 0);
+
+	b.clear();
 
 	return 0;
 }

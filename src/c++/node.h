@@ -1,8 +1,8 @@
 /*
-  Author: Andrey Mokhov, Newcastle University
-  Date: 13 December 2012
-  Contact: andrey.mokhov@ncl.ac.uk
-  Description: BDD nodes and related functionality.
+	Author: Andrey Mokhov, Newcastle University
+	Date: 13 December 2012
+	Contact: andrey.mokhov@{ncl.ac.uk, gmail.com}
+	Description: BDD nodes and related functionality.
 */
 
 #pragma once

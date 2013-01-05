@@ -1,18 +1,18 @@
 /*
-  Author: Andrey Mokhov, Newcastle University
-  Date: 12 December 2012
-  Contact: andrey.mokhov@ncl.ac.uk
-  Description: BDD implementation.
+	Author: Andrey Mokhov, Newcastle University
+	Date: 12 December 2012
+	Contact: andrey.mokhov@{ncl.ac.uk, gmail.com}
+	Description: BDD base implementation.
 */
 
 #include <algorithm>
 #include <limits>
-#include "bdd.h"
+#include "base.h"
 
 namespace bdd
 {
-	BDD::BDD(size_t cacheSize)
-		: sink(getNodeID(nullptr), getNodeID(nullptr), Node::sinkVariable, 1u)
+	Base::Base(size_t cacheSize)
+		: sink(getNodeID(nullptr), getNodeID(nullptr), Node::sinkVariable, 1)
 		, one(getNodeID(&sink))
 		, zero(inverted(one))
 		, cache_f(cacheSize, zero)
@@ -24,7 +24,7 @@ namespace bdd
 			assert((cacheSize & (cacheSize - 1)) == 0);
 		}
 
-	void BDD::setCacheSize(size_t cacheSize)
+	void Base::setCacheSize(size_t cacheSize)
 	{
 		assert((cacheSize & (cacheSize - 1)) == 0);
 		cache_f.assign(cacheSize, zero);
@@ -33,7 +33,7 @@ namespace bdd
 		cache_r.assign(cacheSize, zero);
 	}
 
-	bool BDD::canonise(NodeID &f, NodeID &g, NodeID &h) const
+	bool Base::canonise(NodeID &f, NodeID &g, NodeID &h) const
 	{
 		// Detecting implicit constants:
 		// C1. (f, f, g) -> (f, 1, g)
@@ -107,7 +107,7 @@ namespace bdd
 
 	inline size_t hashIte(NodeID f, NodeID g, NodeID h) { return hashNodeID(f) ^ hashNodeID(g) ^ hashNodeID(h); }
 
-	NodeID BDD::fetchNode(int v, NodeID low, NodeID high)
+	NodeID Base::fetchNode(int v, NodeID low, NodeID high)
 	{
 		// Check if the hash table contains node (v, low, high)
 		Node node(low, high, v, 0), *res = nullptr;
@@ -131,7 +131,7 @@ namespace bdd
 		return getNodeID(res);
 	}
 
-	NodeID BDD::ite(NodeID f, NodeID g, NodeID h)
+	NodeID Base::ite(NodeID f, NodeID g, NodeID h)
 	{
 		const bool invertResult = canonise(f, g, h);
 		assert(isPositive(f) && isPositive(g));
@@ -177,7 +177,7 @@ namespace bdd
 		return referenceNodeID(invertedIf(resID, invertResult));
 	}
 
-	NodeID BDD::iteConst(NodeID f, NodeID g, NodeID h)
+	NodeID Base::iteConst(NodeID f, NodeID g, NodeID h)
 	{
 		const bool invertResult = canonise(f, g, h);
 		assert(isPositive(f) && isPositive(g));
@@ -221,7 +221,7 @@ namespace bdd
 		return invertedIf(low, invertResult);
 	}
 
-	void BDD::referenceNode(Node *node)
+	void Base::referenceNode(Node *node)
 	{
 		printNodeID(getNodeID(node), "Referencing ");
 		assert(node);
@@ -237,7 +237,7 @@ namespace bdd
 		}
 	}
 
-	void BDD::dereferenceNode(Node *node)
+	void Base::dereferenceNode(Node *node)
 	{
 		printNodeID(getNodeID(node), "Dereferencing ");
 		assert(node);
@@ -254,7 +254,7 @@ namespace bdd
 		if (deadCount * 2 > table.size()) performGC();
 	}
 
-	void BDD::performGC()
+	void Base::performGC()
 	{
 		// Cleanup cache.
 		for(size_t i = 0; i < cache_r.size(); i++)
@@ -283,7 +283,7 @@ namespace bdd
 		assert(!deadCount);
 	}
 
-	void BDD::clear()
+	void Base::clear()
 	{
 		// Cleanup cache.
 		setCacheSize(cache_f.size());

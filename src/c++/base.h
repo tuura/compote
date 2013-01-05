@@ -1,8 +1,8 @@
 /*
-  Author: Andrey Mokhov, Newcastle University
-  Date: 12 December 2012
-  Contact: andrey.mokhov@ncl.ac.uk
-  Description: BDD implementation.
+	Author: Andrey Mokhov, Newcastle University
+	Date: 12 December 2012
+	Contact: andrey.mokhov@{ncl.ac.uk, gmail.com}
+	Description: BDD base implementation.
 */
 
 #pragma once
@@ -11,7 +11,7 @@
 
 namespace bdd
 {
-	class BDD /* TODO: make BDD class final (requires gcc 4.7) */
+	class Base /* TODO: make BDD class final (requires gcc 4.7) */
 	{
 		// The only sink node in the BDD, representing constant 1 function.
 		const Node sink;
@@ -49,7 +49,7 @@ namespace bdd
 		private:
 		// Hash table of all BDD nodes.
 		std::unordered_set<Node*, HashNodePtr, EqNodePtr> table;
-		
+
 		// The current number of dead nodes (i.e. whose refs == 0) in the table.
 		size_t deadCount;
 
@@ -64,7 +64,7 @@ namespace bdd
 
 		// Construct a BDD with required cache size (defaulted to defaultCacheSize).
 		// Note: cacheSize must be a power of 2.
-		BDD(size_t cacheSize = defaultCacheSize);
+		Base(size_t cacheSize = defaultCacheSize);
 
 		// Construct BDD for function ite(f, g, h) = f g + ¬f h.
 		NodeID ite(NodeID f, NodeID g, NodeID h);
@@ -112,7 +112,7 @@ namespace bdd
 
 		// Destructor.
 		// Note that it is non-virtual, as the whole class is declared final.
-		~BDD()
+		~Base()
 		{
 			clear();
 		}

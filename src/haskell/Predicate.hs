@@ -1,7 +1,7 @@
 {-
     Author: Andrey Mokhov, Newcastle University
     Date: 25 December 2012
-    Contact: andrey.mokhov@ncl.ac.uk
+    Contact: andrey.mokhov@{ncl.ac.uk, gmail.com}
     Description: Predicate class.
 -}
 

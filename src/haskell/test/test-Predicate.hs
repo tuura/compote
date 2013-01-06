@@ -1,7 +1,7 @@
 {-
     Author: Andrey Mokhov, Newcastle University
     Date: 24 December 2012
-    Contact: andrey.mokhov@ncl.ac.uk
+    Contact: andrey.mokhov@{ncl.ac.uk, gmail.com}
     Description: Testing Haskell interface to BDDs.
 -}
 
@@ -34,6 +34,7 @@ main = do
        test $ iteTrue (x && x') false true
        putStrLn "GC..."
        performGC
+       clear
        putStrLn "Done"
 
 

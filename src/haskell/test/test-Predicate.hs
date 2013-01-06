@@ -5,12 +5,9 @@
     Description: Testing Haskell interface to BDDs.
 -}
 
-{-# LANGUAGE NoImplicitPrelude #-}
-
-import NumericPrelude
 import Predicate
 import BDD
---import Prelude hiding (not, (&&), (||))
+import Prelude hiding (not, (&&), (||))
 
 x = variable 0
 y = variable 1

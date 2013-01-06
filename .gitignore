@@ -1,3 +1,15 @@
+# Sublime Text files
+
+*.sublime-workspace
+
+# Build files
+
+*.o
+*.hi
+*.gch
+
+## Below goes the standard .gitignore file.
+
 #################
 ## Eclipse
 #################

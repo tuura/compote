@@ -5,7 +5,7 @@
     Description: Haskell interface to BDD implementation in C++.
 -}
 
-{-# LANGUAGE TypeFamilies, FlexibleInstances #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module BDD (Node, setCacheSize, performGC) where
 

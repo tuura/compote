@@ -4,6 +4,6 @@ __Compote__ is a prototype tool for manipulating _Parameterised Graphs_ (PGs) al
 
 ## Documentation
 
-You can find some relevant papers in the __/doc/papers__ directory. 
+You can find some relevant papers in the __/doc/papers__ folder.
 
 More details to come :-)

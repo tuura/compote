@@ -2,7 +2,7 @@
 
 *.sublime-workspace
 
-# Build files
+# Project-specific binaries
 
 *.o
 *.hi

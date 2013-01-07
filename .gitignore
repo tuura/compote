@@ -4,11 +4,14 @@
 
 # Project-specific binaries
 
+bin
 *.o
 *.hi
 *.gch
+*.exe
 
 ## Below goes the standard .gitignore file.
+
 
 #################
 ## Eclipse

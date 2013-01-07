@@ -5,8 +5,11 @@
 	Description: Parameterised Graphs (PGs).
 -}
 
-module PG (PG (..), ε, (˽), (~>), (?), normalise) where
+{-# LANGUAGE TypeFamilies #-}
 
+module PG (PG (..), ε, (˽), (~>), (?)) where
+
+import NormalForm
 import Data.Algebra.Boolean
 import Prelude hiding ((&&), (||))
 
@@ -33,31 +36,33 @@ instance (Show a, Show b) => Show (PG a b) where
 	showsPrec d (Condition x p) = showChar '[' . shows x . showChar ']' . showsPrec 2 p
 
 instance (Ord a, Boolean b, Eq b) => Eq (PG a b) where
-	p == q = normalise p == normalise q
+	p == q = toNF p == toNF q
 
-instance (Ord a, Boolean b, Ord b) => Eq (PG a b) where
-	p <= q = normalise (p ˽ q) == normalise q
+instance (Ord a, Boolean b, Eq b) => Ord (PG a b) where
+	p <= q = toNF (p ˽ q) == toNF q
 
 type VertexLiteral a b = (a, b)
 type ArcLiteral a b = ((a, a), b)
 
-type PGNormalForm a b = ([VertexLiteral a b], [ArcLiteral a b])
+instance (Ord a, Boolean b) => NormalForm (PG a b) where
+	type NF (PG a b) = ([VertexLiteral a b], [ArcLiteral a b])
 
-normalise :: (Ord a, Boolean b) => PG a b -> ([(a, b)], [((a, a), b)])
-normalise Epsilon         = ([], [])
-normalise (Vertex v)      = ([(v, true)], [])
-normalise (Overlay p q)   = (pv \./ qv, pa \./ qa)
+	toNF Epsilon         = ([], [])
+	toNF (Vertex v)      = ([(v, true)], [])
+	toNF (Overlay p q)   = (pv \./ qv, pa \./ qa)
 							where
-								(pv, pa) = normalise p
-								(qv, qa) = normalise q
-normalise (Sequence p q)  = (pv \./ qv, pqa \./ (pa \./ qa))
+								(pv, pa) = toNF p
+								(qv, qa) = toNF q
+
+	toNF (Sequence p q)  = (pv \./ qv, pqa \./ (pa \./ qa))
 							where
-								(pv, pa) = normalise p
-								(qv, qa) = normalise q
+								(pv, pa) = toNF p
+								(qv, qa) = toNF q
 								pqa      = [ ((u, v), p && q) | (u, p) <- pv, (v, q) <- qv ]
-normalise (Condition x p) = (map f v, map f a)
+
+	toNF (Condition x p) = (map f v, map f a)
 							where
-								(v, a) = normalise p
+								(v, a) = toNF p
 								f (t, g) = (t, x && g)
 
 (\./) :: (Ord a, Boolean b) => [(a, b)] -> [(a, b)] -> [(a, b)]

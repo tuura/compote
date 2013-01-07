@@ -7,7 +7,7 @@
 
 {-# LANGUAGE TypeFamilies #-}
 
-module BDD (Node, setCacheSize, performGC, clear) where
+module BDD (Node, setCacheSize, runGC, clear) where
 
 import Control.Monad
 import Prelude hiding (and, or, not)
@@ -31,7 +31,7 @@ foreign import ccall "setCacheSize"
 	setCacheSize :: CSize -> IO ()
 
 foreign import ccall "performGC"
-	performGC :: IO ()
+	runGC :: IO ()
 
 foreign import ccall "clear"
 	clear :: IO ()
@@ -58,13 +58,13 @@ foreign import ccall "iteTrue"
 	iteTrueID :: NodeID -> NodeID -> NodeID -> IO Int
 
 ite' :: Node v -> Node v -> Node v -> Node v
-ite' (Node f) (Node g) (Node h) = unsafePerformIO $ 
+ite' (Node f) (Node g) (Node h) = unsafePerformIO $
 													withForeignPtr f $ \fid ->
 													withForeignPtr g $ \gid ->
 													withForeignPtr h $ \hid -> getNode =<< iteID fid gid hid
 
 iteTrue' :: Node v -> Node v -> Node v -> Bool
-iteTrue' (Node f) (Node g) (Node h) = (1 ==) $ unsafePerformIO $ 
+iteTrue' (Node f) (Node g) (Node h) = (1 ==) $ unsafePerformIO $
 																withForeignPtr f $ \fid ->
 																withForeignPtr g $ \gid ->
 																withForeignPtr h $ \hid -> iteTrueID fid gid hid
@@ -86,7 +86,7 @@ instance Enum v => Predicate (Node v) where
 	iteTrue  = iteTrue'
 
 instance Eq (Node v) where
-	p == q = (getID p) == (getID q) 
+	p == q = (getID p) == (getID q)
 
 instance Ord (Node v) where
 	p <= q = iteTrue' p q true

@@ -73,8 +73,8 @@ namespace bdd
 			if (h == one)
 			{
 				std::swap(f, g);
-				invert(f); 
-				invert(g); 
+				invert(f);
+				invert(g);
 			}
 			if (h == zero)
 			{
@@ -82,7 +82,7 @@ namespace bdd
 			}
 			if (h == inverted(g))
 			{
-				h = inverted(f); 
+				h = inverted(f);
 				std::swap(f, g);
 			}
 		}
@@ -113,8 +113,8 @@ namespace bdd
 		Node node(low, high, v, 0), *res = nullptr;
 
 		const auto it = table.find(&node);
-		
-		if (it == table.end()) 
+
+		if (it == table.end())
 		{
 			res = new Node(node);
 			// printNodeID(getNodeID(res), "New node created: ");
@@ -251,10 +251,10 @@ namespace bdd
 			deadCount++;
 		}
 		node->refs--;
-		if (deadCount * 2 > table.size()) performGC();
+		if (deadCount * 2 > table.size()) runGC();
 	}
 
-	void Base::performGC()
+	void Base::runGC()
 	{
 		// Cleanup cache.
 		for(size_t i = 0; i < cache_r.size(); i++)

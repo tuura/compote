@@ -33,7 +33,7 @@ extern "C"
 
 	void setCacheSize(size_t cacheSize) { base.setCacheSize(cacheSize); }
 
-	void performGC() { base.performGC(); }
+	void runGC() { base.runGC(); }
 
 	void clear() { base.clear(); }
 }

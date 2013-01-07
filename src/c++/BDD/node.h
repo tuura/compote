@@ -7,6 +7,7 @@
 
 #pragma once
 #include <algorithm>
+#include <string>
 #include <cassert>
 
 namespace bdd
@@ -85,9 +86,9 @@ namespace bdd
 	};
 
 	// Printing out debug information on a node.
-	inline void printNodeID(NodeID node, char *comment = nullptr)
+	inline void printNodeID(NodeID node, std::string comment = "")
 	{
-		if (comment) printf("%s", comment);
+		printf("%s", comment.c_str());
 
 		printf("[%p]: ", node);
 
@@ -115,7 +116,7 @@ namespace bdd
 
 		if (getNodePtr(ptr->high)->var != Node::sinkVariable)
 			printf("%p)\n", ptr->high);
-		else 
+		else
 			printf("%u)\n", isPositive(ptr->high));
 	}
 }

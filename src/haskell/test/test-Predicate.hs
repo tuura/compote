@@ -1,8 +1,8 @@
 {-
-    Author: Andrey Mokhov, Newcastle University
-    Date: 24 December 2012
-    Contact: andrey.mokhov@{ncl.ac.uk, gmail.com}
-    Description: Testing Haskell interface to BDDs.
+	Author: Andrey Mokhov, Newcastle University
+	Date: 24 December 2012
+	Contact: andrey.mokhov@{ncl.ac.uk, gmail.com}
+	Description: Testing Haskell interface to BDDs.
 -}
 
 import Predicate
@@ -22,19 +22,18 @@ test True = putStrLn "OK"
 test False = putStrLn "FAIL"
 
 main = do
-       test $ (true :: Node Int) /= false
-       test $ x == not x'
-       test $ x' == ite x false true
-       test $ (x && y) == (not (x' || y'))
-       test $ (x && z || y && z') == (x && y || x && z || y && z')
-       setCacheSize 65536
-       test $ ((x `xor` y) `xor` (x `xor` y')) == true
-       test $ (x && y) < x
-       test $ x' < (x' || y')
-       test $ iteTrue (x && x') false true
-       putStrLn "GC..."
-       performGC
-       clear
-       putStrLn "Done"
-
-
+	   test $ (true :: Node Int) /= false
+	   test $ x == not x'
+	   test $ x' == ite x false true
+	   test $ (x && y) == (not (x' || y'))
+	   test $ (x && z || y && z') == (x && y || x && z || y && z')
+	   setCacheSize 65536
+	   test $ ((x `xor` y) `xor` (x `xor` y')) == true
+	   test $ (x && y) < x
+	   test $ x' < (x' || y')
+	   test $ iteTrue (x && x') false true
+	   putStrLn "GC..."
+	   runGC
+	   putStrLn "Clearing..."
+	   clear
+	   putStrLn "Done"

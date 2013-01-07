@@ -6,6 +6,7 @@
 */
 
 #include <cstdio>
+#include <string>
 #include "base.h"
 #include "node.h"
 
@@ -25,9 +26,9 @@ bool report(bool condition)
 	return condition;
 }
 
-bool error(char *condition, int line)
+bool error(std::string condition, int line)
 {
-	printf("%s, at line %d\n", condition, line);
+	printf("%s, at line %d\n", condition.c_str(), line);
 	return true;
 }
 
@@ -93,7 +94,7 @@ int main()
 	b.dereferenceNodeID(x);
 	b.dereferenceNodeID(y);
 	b.dereferenceNodeID(z);
-	
+
 	b.dereferenceNodeID(nx);
 	b.dereferenceNodeID(ny);
 	b.dereferenceNodeID(nz);
@@ -101,17 +102,17 @@ int main()
 	b.dereferenceNodeID(x_and_y);
 	b.dereferenceNodeID(nx_or_ny);
 	b.dereferenceNodeID(not_nx_or_ny);
-	
+
 	b.dereferenceNodeID(xz);
 	b.dereferenceNodeID(ynz);
-	
+
 	b.dereferenceNodeID(xz_ynz);
 	b.dereferenceNodeID(xy_xz_ynz);
-	
+
 	b.dereferenceNodeID(x_xor_y);
 	b.dereferenceNodeID(x_xor_ny);
 
-	b.performGC();
+	b.runGC();
 
 	test(b.size() == 0);
 	test(b.sizeDead() == 0);

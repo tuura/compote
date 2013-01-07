@@ -77,9 +77,9 @@ namespace bdd
 
 		// Construct BDDs for basic logic functions.
 		NodeID andGate(NodeID f, NodeID g) { return ite(f, g, zero); }
-		NodeID  orGate(NodeID f, NodeID g) { return ite(f, one, g); }	
-		NodeID xorGate(NodeID f, NodeID g) { return ite(f, inverted(g), g); }	
-		NodeID notGate(NodeID f          ) { return referenceNodeID(inverted(f)); }	
+		NodeID  orGate(NodeID f, NodeID g) { return ite(f, one, g); }
+		NodeID xorGate(NodeID f, NodeID g) { return ite(f, inverted(g), g); }
+		NodeID notGate(NodeID f          ) { return referenceNodeID(inverted(f)); }
 
 		// Check if f => g is a tautology.
 		bool imply(NodeID f, NodeID g) { return iteConst(f, g, one) == one; }
@@ -100,7 +100,7 @@ namespace bdd
 		void dereferenceNode(Node *node);
 
 		// Garbage collection: removing all dead nodes from the cache and hash tables.
-		void performGC();
+		void runGC();
 
 		// Removes all the bdd nodes bringing the object to its initial state.
 		// Called from the desctructor.

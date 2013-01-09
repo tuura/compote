@@ -18,6 +18,8 @@ class Boolean a => Predicate a where
 
 	ite      :: a -> a -> a -> a
 	iteTrue  :: Eq a => a -> a -> a -> Bool
+	imply    :: Eq a => a -> a -> Bool
 
 	ite     f g h = f && g || (not f) && h
 	iteTrue f g h = (ite f g h) == true
+	imply   f g   = iteTrue f g true

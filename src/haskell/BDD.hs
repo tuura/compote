@@ -87,6 +87,3 @@ instance Enum v => Predicate (Node v) where
 
 instance Eq (Node v) where
 	p == q = (getID p) == (getID q)
-
-instance Ord (Node v) where
-	p <= q = iteTrue' p q true

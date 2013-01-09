@@ -32,19 +32,19 @@ instance Condition (PG a b) where
 	type Parameter (PG a b) = b
 	(?) = Condition
 
-class MapPG a where
-	type ResultAlphabet a
-	type ResultParameter b
-	mapPG :: (Epsilon b, Vertex b, Overlay b, Sequence b, Condition b, ResultAlphabet a ~ Alphabet b, ResultParameter a ~ Parameter b) => a -> b
+--class MapPG a where
+--	type ResultAlphabet a
+--	type ResultParameter b
+--	mapPG :: (Epsilon b, Vertex b, Overlay b, Sequence b, Condition b, ResultAlphabet a ~ Alphabet b, ResultParameter a ~ Parameter b) => a -> b
 
-instance MapPG (PG a b) where
-	type ResultAlphabet (PG a b) = a
-	type ResultParameter (PG a b) = b
-	mapPG Epsilon         = ε
-	mapPG (Vertex v)      = vertex v
-	mapPG (Overlay p q)   = p ˽ q
-	mapPG (Sequence p q)  = p ~> q
-	mapPG (Condition x p) = x ? p
+--instance MapPG (PG a b) where
+--	type ResultAlphabet (PG a b) = a
+--	type ResultParameter (PG a b) = b
+--	mapPG Epsilon         = ε
+--	mapPG (Vertex v)      = vertex v
+--	mapPG (Overlay p q)   = p ˽ q
+--	mapPG (Sequence p q)  = p ~> q
+--	mapPG (Condition x p) = x ? p
 
 --mapPG :: (Epsilon r, Vertex r, Overlay r, Sequence r, Condition r) => PG (Alphabet r) (Parameter r) -> r
 --mapPG Epsilon         = ε
@@ -55,25 +55,25 @@ instance MapPG (PG a b) where
 
 -- PG normal form
 
+--instance Epsilon (PGNF a b) where ε = ([], [])
+
+--instance Boolean b => Vertex (PGNF a b) where
+--	type Alphabet (PGNF a b) = a
+--	vertex v = ([(v, true)], [])
+
+--instance (Ord a, Boolean b) => Overlay (PGNF a b) where
+--	(pv, pa) ˽ (qv, qa) = (pv \./ qv, pa \./ qa)
+
+--instance (Ord a, Boolean b) => Sequence (PGNF a b) where
+--	(pv, pa) ~> (qv, qa) = (pv \./ qv, [ ((from, to), x && y) | (from, x) <- pv, (to, y) <- qv ] \./ (pa \./ qa))
+
+--instance Boolean b => Condition (PGNF a b) where
+--	type Parameter (PGNF a b) = b
+--	x ? (v, a) = (map (\(t, f) -> (t, x && f)) v, map (\(t, f) -> (t, x && f)) a)
+
 type VertexLiteral a b = (a, b)
 type ArcLiteral a b = ((a, a), b)
 type PGNF a b = ([VertexLiteral a b], [ArcLiteral a b])
-
-instance Epsilon (PGNF a b) where ε = ([], [])
-
-instance Boolean b => Vertex (PGNF a b) where
-	type Alphabet (PGNF a b) = a
-	vertex v = ([(v, true)], [])
-
-instance (Ord a, Boolean b) => Overlay (PGNF a b) where
-	(pv, pa) ˽ (qv, qa) = (pv \./ qv, pa \./ qa)
-
-instance (Ord a, Boolean b) => Sequence (PGNF a b) where
-	(pv, pa) ~> (qv, qa) = (pv \./ qv, [ ((from, to), x && y) | (from, x) <- pv, (to, y) <- qv ] \./ (pa \./ qa))
-
-instance Boolean b => Condition (PGNF a b) where
-	type Parameter (PGNF a b) = b
-	x ? (v, a) = (map (\(t, f) -> (t, x && f)) v, map (\(t, f) -> (t, x && f)) a)
 
 instance (Ord a, Boolean b) => NormalForm (PG a b) where
 	type NF (PG a b) = PGNF a b
@@ -84,12 +84,7 @@ instance (Ord a, Boolean b) => NormalForm (PG a b) where
 	toNF (Sequence p q)  = toNF p ~> toNF q
 	toNF (Condition x p) = x ? toNF p
 
-(\./) :: (Ord a, Boolean b) => [(a, b)] -> [(a, b)] -> [(a, b)]
-[] \./ rest                 = rest
-rest \./ []                 = rest
-((u, p):us) \./ ((v, q):vs) | u < v     = (u, p) : us \./ ((v, q):vs)
-							| u > v     = (v, q) : ((u, p):us) \./ vs
-							| otherwise = (u, p || q) : us \./ vs
+
 
 instance (Show a, Show b) => Show (PG a b) where
 	showsPrec _ Epsilon         = showChar 'ε'
@@ -100,6 +95,3 @@ instance (Show a, Show b) => Show (PG a b) where
 
 instance (Ord a, Boolean b, Eq b) => Eq (PG a b) where
 	p == q = toNF p == toNF q
-
-instance (Ord a, Boolean b, Eq b) => Ord (PG a b) where
-	p <= q = toNF (p ˽ q) == toNF q

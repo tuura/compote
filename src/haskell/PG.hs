@@ -11,6 +11,7 @@ module PG (PG (..)) where
 
 import Elements
 import NormalForm
+import PS
 import Data.Algebra.Boolean
 import Prelude hiding ((&&), (||))
 
@@ -32,59 +33,42 @@ instance Condition (PG a b) where
 	type Parameter (PG a b) = b
 	(?) = Condition
 
---class MapPG a where
---	type ResultAlphabet a
---	type ResultParameter b
---	mapPG :: (Epsilon b, Vertex b, Overlay b, Sequence b, Condition b, ResultAlphabet a ~ Alphabet b, ResultParameter a ~ Parameter b) => a -> b
-
---instance MapPG (PG a b) where
---	type ResultAlphabet (PG a b) = a
---	type ResultParameter (PG a b) = b
---	mapPG Epsilon         = ε
---	mapPG (Vertex v)      = vertex v
---	mapPG (Overlay p q)   = p ˽ q
---	mapPG (Sequence p q)  = p ~> q
---	mapPG (Condition x p) = x ? p
-
---mapPG :: (Epsilon r, Vertex r, Overlay r, Sequence r, Condition r) => PG (Alphabet r) (Parameter r) -> r
---mapPG Epsilon         = ε
---mapPG (Vertex v)      = vertex v
---mapPG (Overlay p q)   = p ˽ q
---mapPG (Sequence p q)  = p ~> q
---mapPG (Condition x p) = x ? p
+class MapPG m where
+	mapPG :: (Epsilon m, Vertex m, Overlay m, Sequence m, Condition m, Alphabet m ~ a, Parameter m ~ b) => PG a b -> m
+	mapPG Epsilon         = ε
+	mapPG (Vertex e)      = vertex e
+	mapPG (Overlay p q)   = mapPG p ˽ mapPG q
+	mapPG (Sequence p q)  = mapPG p ~> mapPG q
+	mapPG (Condition x p) = x ? mapPG p
 
 -- PG normal form
 
---instance Epsilon (PGNF a b) where ε = ([], [])
+newtype PGNF a b = PGNF ([(a, b)], [((a, a), b)]) deriving Eq
 
---instance Boolean b => Vertex (PGNF a b) where
---	type Alphabet (PGNF a b) = a
---	vertex v = ([(v, true)], [])
+instance Epsilon (PGNF a b) where ε = PGNF (ε, ε)
 
---instance (Ord a, Boolean b) => Overlay (PGNF a b) where
---	(pv, pa) ˽ (qv, qa) = (pv \./ qv, pa \./ qa)
+instance (Boolean b) => Vertex (PGNF a b) where
+	type Alphabet (PGNF a b) = a
+	vertex v = PGNF (vertex v, ε)
 
---instance (Ord a, Boolean b) => Sequence (PGNF a b) where
---	(pv, pa) ~> (qv, qa) = (pv \./ qv, [ ((from, to), x && y) | (from, x) <- pv, (to, y) <- qv ] \./ (pa \./ qa))
+instance (Ord a, Boolean b) => Overlay (PGNF a b) where
+	PGNF (p1, p2) ˽ PGNF (q1, q2) = PGNF (p1 ˽ q1, p2 ˽ q2)
 
---instance Boolean b => Condition (PGNF a b) where
---	type Parameter (PGNF a b) = b
---	x ? (v, a) = (map (\(t, f) -> (t, x && f)) v, map (\(t, f) -> (t, x && f)) a)
+instance (Ord a, Boolean b) => Sequence (PGNF a b) where
+	PGNF (p1, p2) ~> PGNF (q1, q2) = PGNF (p1 ˽ q1, [ ((from, to), x && y) | (from, x) <- p1, (to, y) <- q1 ] ˽ (p2 ˽ q2))
 
-type VertexLiteral a b = (a, b)
-type ArcLiteral a b = ((a, a), b)
-type PGNF a b = ([VertexLiteral a b], [ArcLiteral a b])
+instance (Eq b, Boolean b) => Condition (PGNF a b) where
+	type Parameter (PGNF a b) = b
+	x ? PGNF (p, q) = PGNF (x ? p, x ? q)
 
-instance (Ord a, Boolean b) => NormalForm (PG a b) where
+instance MapPG (PGNF a b)
+
+instance (Ord a, Eq b, Boolean b) => NormalForm (PG a b) where
 	type NF (PG a b) = PGNF a b
-
-	toNF Epsilon         = ε
-	toNF (Vertex v)      = vertex v
-	toNF (Overlay p q)   = toNF p ˽  toNF q
-	toNF (Sequence p q)  = toNF p ~> toNF q
-	toNF (Condition x p) = x ? toNF p
-
-
+	toNF                 = mapPG
+	fromNF (PGNF (p, q)) = foldr (˽) arcs $ map (\(v, x) -> x ? vertex v) p
+						   where
+								arcs = foldr (˽) ε $ map (\((u, v), x) -> x ? (vertex u ~> vertex v)) q
 
 instance (Show a, Show b) => Show (PG a b) where
 	showsPrec _ Epsilon         = showChar 'ε'
@@ -93,5 +77,8 @@ instance (Show a, Show b) => Show (PG a b) where
 	showsPrec d (Sequence p q)  = showParen (d > 1) $ showsPrec 1 p . showString " —→ " . showsPrec 1 q
 	showsPrec d (Condition x p) = showChar '[' . shows x . showChar ']' . showsPrec 2 p
 
-instance (Ord a, Boolean b, Eq b) => Eq (PG a b) where
+instance (Show a, Show b) => Show (PGNF a b) where
+	showsPrec _ (PGNF (p, q)) = shows p . showChar ' ' . shows q
+
+instance (Ord a, Eq b, Boolean b) => Eq (PG a b) where
 	p == q = toNF p == toNF q

@@ -7,7 +7,7 @@
 
 {-# LANGUAGE TypeFamilies, TypeSynonymInstances, FlexibleInstances #-}
 
-module PS (PS) where
+module PS (PS, PS.Epsilon, PS.Overlay, PS.Vertex, PS.Condition, MapPS) where
 
 import Prelude hiding ((||), (&&))
 import Elements
@@ -38,6 +38,8 @@ class MapPS m where
 	mapPS (Condition x p) = x ? mapPS p
 
 instance MapPS [(a, b)]
+
+-- PS normal form
 
 instance (Ord a, Eq b, Boolean b) => NormalForm (PS a b) where
 	type NF (PS a b) = [(a, b)]

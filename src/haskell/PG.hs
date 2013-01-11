@@ -7,7 +7,7 @@
 
 {-# LANGUAGE TypeFamilies, TypeSynonymInstances, FlexibleInstances #-}
 
-module PG (PG (..)) where
+module PG (PG (..), MapPG) where
 
 import Elements
 import NormalForm

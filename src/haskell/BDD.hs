@@ -6,6 +6,11 @@
 -}
 
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module BDD (Node, setCacheSize, runGC, clear) where
 
@@ -16,10 +21,29 @@ import Foreign hiding (xor, unsafePerformIO)
 import Foreign.C.Types
 import Predicate
 import Data.Algebra.Boolean
+import Control.Monad.Cont
+import Control.Applicative
 
 data NodeStruct
 type NodeID = Ptr NodeStruct
 newtype Node v = Node (ForeignPtr NodeStruct)
+
+extractNode :: Node v -> ContT r IO NodeID
+extractNode (Node ptr) = ContT (withForeignPtr ptr)
+
+class Convertible a b | a -> b where
+  convertC :: (forall r. ContT r IO a) -> b
+  convert :: a -> b
+  convert a = convertC (return a)
+
+instance Convertible (IO Int) Int where
+  convertC raw = unsafePerformIO $ runContT raw id
+
+instance Convertible (IO NodeID) (Node v) where
+  convertC raw = unsafePerformIO $ runContT raw (>>=getNode)
+
+instance Convertible raw cooked => Convertible (NodeID -> raw) (Node v -> cooked) where
+  convertC f n = convertC $ f <*> extractNode n
 
 getID :: Node v -> NodeID
 getID (Node node) = unsafePerformIO $ withForeignPtr node return
@@ -57,22 +81,15 @@ foreign import ccall "variable"
 foreign import ccall "iteTrue"
 	iteTrueID :: NodeID -> NodeID -> NodeID -> IO Int
 
-ite' :: Node v -> Node v -> Node v -> Node v
-ite' (Node f) (Node g) (Node h) = unsafePerformIO $
-													withForeignPtr f $ \fid ->
-													withForeignPtr g $ \gid ->
-													withForeignPtr h $ \hid -> getNode =<< iteID fid gid hid
+ite' = convert iteID
 
 iteTrue' :: Node v -> Node v -> Node v -> Bool
-iteTrue' (Node f) (Node g) (Node h) = (1 ==) $ unsafePerformIO $
-																withForeignPtr f $ \fid ->
-																withForeignPtr g $ \gid ->
-																withForeignPtr h $ \hid -> iteTrueID fid gid hid
+iteTrue' f g h = 1 == convert iteTrueID f g h
 
 instance Boolean (Node v) where
-	true         = unsafePerformIO $ getNode =<< oneID
-	false        = unsafePerformIO $ getNode =<< zeroID
-	not (Node x) = unsafePerformIO $ withForeignPtr x $ getNode <=< notID
+	true         = convert oneID
+	false        = convert zeroID
+	not          = convert notID
 	x && y       = ite' x y       false
 	x || y       = ite' x true    y
 	xor x y      = ite' x (not y) y
@@ -81,7 +98,7 @@ instance Boolean (Node v) where
 
 instance Enum v => Predicate (Node v) where
 	type Variable (Node v) = v
-	variable = unsafePerformIO . (getNode <=< variableID) . fromEnum
+	variable = convert . variableID . fromEnum
 	ite      = ite'
 	iteTrue  = iteTrue'
 

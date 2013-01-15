@@ -27,34 +27,34 @@ getID (Node node) = unsafePerformIO $ withForeignPtr node return
 getNode :: NodeID -> IO (Node v)
 getNode id = fmap Node $ newForeignPtr dereferenceID id
 
-foreign import ccall "setCacheSize"
+foreign import ccall unsafe "setCacheSize"
 	setCacheSize :: CSize -> IO ()
 
-foreign import ccall "performGC"
+foreign import ccall unsafe "performGC"
 	runGC :: IO ()
 
-foreign import ccall "clear"
+foreign import ccall unsafe "clear"
 	clear :: IO ()
 
-foreign import ccall "one"
+foreign import ccall unsafe "one"
 	oneID :: IO NodeID
 
-foreign import ccall "zero"
+foreign import ccall unsafe "zero"
 	zeroID :: IO NodeID
 
-foreign import ccall "notGate"
+foreign import ccall unsafe "notGate"
 	notID :: NodeID -> IO NodeID
 
-foreign import ccall "ite"
+foreign import ccall unsafe "ite"
 	iteID :: NodeID -> NodeID -> NodeID -> IO NodeID
 
-foreign import ccall "&dereference"
+foreign import ccall unsafe "&dereference"
 	dereferenceID :: FunPtr (NodeID -> IO ())
 
-foreign import ccall "variable"
+foreign import ccall unsafe "variable"
 	variableID :: Int -> IO NodeID
 
-foreign import ccall "iteTrue"
+foreign import ccall unsafe "iteTrue"
 	iteTrueID :: NodeID -> NodeID -> NodeID -> IO Int
 
 ite' :: Node v -> Node v -> Node v -> Node v

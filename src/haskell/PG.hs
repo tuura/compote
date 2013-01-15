@@ -7,7 +7,7 @@
 
 {-# LANGUAGE TypeFamilies, TypeSynonymInstances, FlexibleInstances #-}
 
-module PG (PG (..), MapPG) where
+module PG (PG (..), foldPG) where
 
 import Elements
 import NormalForm
@@ -33,13 +33,12 @@ instance Condition (PG a b) where
 	type Parameter (PG a b) = b
 	(?) = Condition
 
-class MapPG m where
-	mapPG :: (Epsilon m, Vertex m, Overlay m, Sequence m, Condition m, Alphabet m ~ a, Parameter m ~ b) => PG a b -> m
-	mapPG Epsilon         = ε
-	mapPG (Vertex e)      = vertex e
-	mapPG (Overlay p q)   = mapPG p ˽ mapPG q
-	mapPG (Sequence p q)  = mapPG p ~> mapPG q
-	mapPG (Condition x p) = x ? mapPG p
+foldPG :: (Epsilon m, Vertex m, Overlay m, Sequence m, Condition m, Alphabet m ~ a, Parameter m ~ b) => PG a b -> m
+foldPG Epsilon         = ε
+foldPG (Vertex e)      = vertex e
+foldPG (Overlay p q)   = foldPG p ˽ foldPG q
+foldPG (Sequence p q)  = foldPG p ~> foldPG q
+foldPG (Condition x p) = x ? foldPG p
 
 -- PG normal form
 
@@ -61,11 +60,9 @@ instance (Eq b, Boolean b) => Condition (PGNF a b) where
 	type Parameter (PGNF a b) = b
 	x ? PGNF (p, q) = PGNF (x ? p, x ? q)
 
-instance MapPG (PGNF a b)
-
 instance (Ord a, Eq b, Boolean b) => NormalForm (PG a b) where
 	type NF (PG a b) = PGNF a b
-	toNF                 = mapPG
+	toNF                 = foldPG
 	fromNF (PGNF (p, q)) = foldr (˽) arcs $ map (\(v, x) -> x ? vertex v) p
 						   where
 								arcs = foldr (˽) ε $ map (\((u, v), x) -> x ? (vertex u ~> vertex v)) q
@@ -74,7 +71,7 @@ instance (Show a, Show b) => Show (PG a b) where
 	showsPrec _ Epsilon         = showChar 'ε'
 	showsPrec _ (Vertex v)      = shows v
 	showsPrec d (Overlay p q)   = showParen (d > 0) $ shows p . showChar ' ' . shows q
-	showsPrec d (Sequence p q)  = showParen (d > 1) $ showsPrec 1 p . showString " —→ " . showsPrec 1 q
+	showsPrec d (Sequence p q)  = showParen (d > 1) $ showsPrec 1 p . showString " → " . showsPrec 1 q
 	showsPrec d (Condition x p) = showChar '[' . shows x . showChar ']' . showsPrec 2 p
 
 instance (Show a, Show b) => Show (PGNF a b) where

@@ -7,7 +7,7 @@
 
 {-# LANGUAGE TypeFamilies, TypeSynonymInstances, FlexibleInstances #-}
 
-module PS (PS, PS.Epsilon, PS.Overlay, PS.Vertex, PS.Condition, MapPS) where
+module PS (PS, foldPS) where
 
 import Prelude hiding ((||), (&&))
 import Elements
@@ -30,20 +30,17 @@ instance Condition (PS a b) where
 	type Parameter (PS a b) = b
 	(?) = Condition
 
-class MapPS m where
-	mapPS :: (Epsilon m, Vertex m, Overlay m, Condition m, Alphabet m ~ a, Parameter m ~ b) => PS a b -> m
-	mapPS Epsilon         = ε
-	mapPS (Vertex e)      = vertex e
-	mapPS (Overlay p q)   = mapPS p ˽ mapPS q
-	mapPS (Condition x p) = x ? mapPS p
-
-instance MapPS [(a, b)]
+foldPS :: (Epsilon m, Vertex m, Overlay m, Condition m, Alphabet m ~ a, Parameter m ~ b) => PS a b -> m
+foldPS Epsilon         = ε
+foldPS (Vertex e)      = vertex e
+foldPS (Overlay p q)   = foldPS p ˽ foldPS q
+foldPS (Condition x p) = x ? foldPS p
 
 -- PS normal form
 
 instance (Ord a, Eq b, Boolean b) => NormalForm (PS a b) where
 	type NF (PS a b) = [(a, b)]
-	toNF   = mapPS
+	toNF   = foldPS
 	fromNF = foldr (˽) ε . map (\(v, x) -> x ? vertex v)
 
 instance (Show a, Show b) => Show (PS a b) where

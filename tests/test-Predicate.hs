@@ -29,8 +29,8 @@ main = do
 	   test $ (x && z || y && z') == (x && y || x && z || y && z')
 	   setCacheSize 65536
 	   test $ ((x `xor` y) `xor` (x `xor` y')) == true
-	   test $ (x && y) < x
-	   test $ x' < (x' || y')
+	   test $ (x && y) `imply` x
+	   test $ x' `imply` (x' || y')
 	   test $ iteTrue (x && x') false true
 	   putStrLn "GC..."
 	   runGC

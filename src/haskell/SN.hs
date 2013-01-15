@@ -5,7 +5,7 @@
 	Description: Basic data type for algebra of switching networks.
 -}
 
-module SN (SN (..), ε, (˽), (~~), (?), mapa, mapb, mapab, expand) where
+module SN (SN (..), foldSN) where
 
 data SN a b = Epsilon
 			| Vertex a
@@ -13,14 +13,7 @@ data SN a b = Epsilon
 			| Connection (SN a b) (SN a b)
 			| Condition b (SN a b)
 
-ε    = Epsilon
-(˽)  = Overlay
-(~~) = Connection
-(?)  = Condition
 
-infixl 6 ˽
-infixl 7 ~~
-infixr 8 ?
 
 instance (Show a, Show b) => Show (SN a b) where
 	showsPrec _ Epsilon          = showChar 'ε'

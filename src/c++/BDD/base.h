@@ -11,7 +11,7 @@
 
 namespace bdd
 {
-	class Base /* TODO: make BDD class final (requires gcc 4.7) */
+	class Base final
 	{
 		// The only sink node in the BDD, representing constant 1 function.
 		const Node sink;
@@ -54,6 +54,7 @@ namespace bdd
 		size_t deadCount;
 
 		// Fetch the node from the hash table, or create a new one.
+		// Reference counter of the returned node is incremented.
 		NodeID fetchNode(int v, NodeID low, NodeID high);
 
 		// Converts ite(f, g, h) into canonical form.
@@ -67,42 +68,46 @@ namespace bdd
 		Base(size_t cacheSize = defaultCacheSize);
 
 		// Construct BDD for function ite(f, g, h) = f g + ¬f h.
+		// Reference counter of the returned node is incremented.
 		NodeID ite(NodeID f, NodeID g, NodeID h);
 
 		// Check if function ite(f, g, h) = f g + ¬f h is constant.
 		// Returns 0, 1, or a non-constant node ID, not necessarily equal to ite(f, g, h).
 		// No intermediate BDD nodes are created in the process.
-		// Note: reference count of a returned node is not increased.
+		// Reference counter of the returned node is NOT incremented.
 		NodeID iteConst(NodeID f, NodeID g, NodeID h);
 
 		// Construct BDDs for basic logic functions.
+		// Reference counter of the returned node is incremented.
 		NodeID andGate(NodeID f, NodeID g) { return ite(f, g, zero); }
 		NodeID  orGate(NodeID f, NodeID g) { return ite(f, one, g); }
-		NodeID xorGate(NodeID f, NodeID g) { return ite(f, inverted(g), g); }
-		NodeID notGate(NodeID f          ) { return referenceNodeID(inverted(f)); }
+		NodeID xorGate(NodeID f, NodeID g) { return ite(f, invert(g), g); }
+		NodeID notGate(NodeID f          ) { return referenceNodeID(invert(f)); }
 
 		// Check if f => g is a tautology.
 		bool imply(NodeID f, NodeID g) { return iteConst(f, g, one) == one; }
 
 		// Construct a variable node, possible negated.
+		// Reference counter of the returned node is incremented.
 		NodeID variable(int var, bool positive = true)
 		{
-			return referenceNodeID(invertedIf(fetchNode(var, one, zero), positive));
+			return invertIf(fetchNode(var, one, zero), positive);
 		}
 
 		// Increase reference count of a node (if initially 0, apply recursively to children).
 		NodeID referenceNodeID(NodeID id) { referenceNode(getNodePtr(id)); return id; }
 		void referenceNode(Node *node);
 
-		// Dereference a node.
+		// Dereference a node (if reference counter reaches 0, apply recursively to children).
 		// Dereferenced nodes will be deleted eventually unless they are referenced again.
+		// Triggers garbage collection if (deadCount * 2 > table.size()).
 		NodeID dereferenceNodeID(NodeID id) { dereferenceNode(getNodePtr(id)); return id; }
 		void dereferenceNode(Node *node);
 
-		// Garbage collection: removing all dead nodes from the cache and hash tables.
+		// Garbage collection: remove all dead nodes from the cache and hash tables.
 		void runGC();
 
-		// Removes all the bdd nodes bringing the object to its initial state.
+		// Remove all bdd nodes bringing the object to its initial state.
 		// Called from the desctructor.
 		void clear();
 

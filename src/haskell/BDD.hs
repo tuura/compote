@@ -1,5 +1,5 @@
 {-
-	Author: Andrey Mokhov, Newcastle University
+	Authors: Andrey Mokhov, Arseniy Alekseyev, Newcastle University
 	Date: 24 December 2012
 	Contact: andrey.mokhov@{ncl.ac.uk, gmail.com}
 	Description: Haskell interface to BDD implementation in C++.
@@ -54,7 +54,7 @@ getNode id = fmap Node $ newForeignPtr dereferenceID id
 foreign import ccall unsafe "setCacheSize"
 	setCacheSize :: CSize -> IO ()
 
-foreign import ccall unsafe "performGC"
+foreign import ccall unsafe "runGC"
 	runGC :: IO ()
 
 foreign import ccall unsafe "clear"

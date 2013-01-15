@@ -14,7 +14,7 @@ namespace bdd
 	Base::Base(size_t cacheSize)
 		: sink(getNodeID(nullptr), getNodeID(nullptr), Node::sinkVariable, 1)
 		, one(getNodeID(&sink))
-		, zero(inverted(one))
+		, zero(invert(one))
 		, cache_f(cacheSize, zero)
 		, cache_g(cacheSize, zero)
 		, cache_h(cacheSize, zero)
@@ -33,6 +33,24 @@ namespace bdd
 		cache_r.assign(cacheSize, zero);
 	}
 
+	// A total order on BDD nodes.
+	// Sink nodes precede others.
+	bool operator<(NodeID fid, NodeID gid)
+	{
+		Node *f = getNodePtr(fid);
+		Node *g = getNodePtr(gid);
+		assert(f && g);
+
+		if (f->var != g->var)
+		{
+			if (f->var == Node::sinkVariable) return true;
+			if (g->var == Node::sinkVariable) return false;
+			return f->var < g->var;
+		}
+
+		return f < g;
+	}
+
 	bool Base::canonise(NodeID &f, NodeID &g, NodeID &h) const
 	{
 		// Detecting implicit constants:
@@ -43,46 +61,48 @@ namespace bdd
 		if (f == h) h = zero;
 
 		// C3. (f, ¬f, g) -> (f, 0, g)
-		if (g == inverted(f)) g = zero;
+		if (g == invert(f)) g = zero;
 
 		// C4. (f, g, ¬f) -> (f, g, 1)
-		if (h == inverted(f)) h = one;
+		if (h == invert(f)) h = one;
 
 		// Finding canonical order:
 		// O1. ite(f, 1, h) = ite( h, 1,  f)
 		// O2. ite(f, 0, h) = ite(¬h, 0, ¬f)
-		if (cmpNodeID(h, f))
+		if (h < f)
 		{
 			if (g == one)
 			{
 				std::swap(f, h);
 			}
+			else
 			if (g == zero)
 			{
 				std::swap(f, h);
-				invert(f);
-				invert(h);
+				f = invert(f);
+				h = invert(h);
 			}
 		}
 
 		// O3. ite(f, g,  1) = ite(¬g, ¬f,  1)
 		// O4. ite(f, g,  0) = ite( g,  f,  0)
 		// O5. ite(f, g, ¬g) = ite( g,  f, ¬f)
-		if (cmpNodeID(g, f))
+		if (g < f)
 		{
 			if (h == one)
 			{
 				std::swap(f, g);
-				invert(f);
-				invert(g);
+				f = invert(f);
+				g = invert(g);
 			}
+			else
 			if (h == zero)
 			{
 				std::swap(f, g);
 			}
-			if (h == inverted(g))
+			if (h == invert(g))
 			{
-				h = inverted(f);
+				h = invert(f);
 				std::swap(f, g);
 			}
 		}
@@ -91,15 +111,15 @@ namespace bdd
 		// P1. ite(¬f, g, h) =  ite(f, h, g)
 		if (isNegative(f))
 		{
-			invert(f);
+			f = invert(f);
 			std::swap(g, h);
 		}
 
 		// P2. ite(f, ¬g, h) = ¬ite(f, g, ¬h)
 		if (isNegative(g))
 		{
-			invert(g);
-			invert(h);
+			g = invert(g);
+			h = invert(h);
 			return true;
 		}
 		return false;
@@ -110,7 +130,7 @@ namespace bdd
 	NodeID Base::fetchNode(int v, NodeID low, NodeID high)
 	{
 		// Check if the hash table contains node (v, low, high)
-		Node node(low, high, v, 0), *res = nullptr;
+		Node node(low, high, v, 1), *res = nullptr;
 
 		const auto it = table.find(&node);
 
@@ -119,11 +139,12 @@ namespace bdd
 			res = new Node(node);
 			// printNodeID(getNodeID(res), "New node created: ");
 			table.insert(res);
-			deadCount++; // Node is initially dead (it will soon be revived by referencing).
 		}
 		else
 		{
 			res = *it;
+			// TODO: Not thread-safe (if a dead node is found it can be removed by GC before the increment below secures its live).
+			res->refs++;
 		}
 
 		assert(res);
@@ -139,14 +160,16 @@ namespace bdd
 		// Testing terminal cases: ite(1, g, _) = ite(_, g, g) = g
 		if (f == one || g == h)
 		{
-			return referenceNodeID(invertedIf(g, invertResult));
+			referenceNodeID(g);
+			return invertIf(g, invertResult);
 		}
 
 		// Check if ite(f, g, h) is in cache.
 		const size_t hsh = hashIte(f, g, h) & (cache_f.size() - 1);
 		if (cache_f[hsh] == f && cache_g[hsh] == g && cache_h[hsh] == h)
 		{
-			return referenceNodeID(invertedIf(cache_r[hsh], invertResult));
+			referenceNodeID(cache_r[hsh]);
+			return invertIf(cache_r[hsh], invertResult);
 		}
 
 		const Node *pf = getNodePtr(f); assert(pf);
@@ -156,25 +179,27 @@ namespace bdd
 		const int v = std::min(pf->var, std::min(pg->var, ph->var));
 		assert(v != Node::sinkVariable);
 
-		const NodeID low  = dereferenceNodeID(ite(pf->var == v ? pf->low : f,
-										  	  	  pg->var == v ? pg->low : g,
-										  		  ph->var == v ? invertedIf(ph->low, isNegative(h)) : h));
+		const NodeID low  = ite(pf->var == v ? pf->low : f,
+								pg->var == v ? pg->low : g,
+								ph->var == v ? invertIf(ph->low, isNegative(h)) : h);
 
-		const NodeID high = dereferenceNodeID(ite(pf->var == v ? pf->high : f,
-										  		  pg->var == v ? pg->high : g,
-										  		  ph->var == v ? invertedIf(ph->high, isNegative(h)) : h));
+		const NodeID high = ite(pf->var == v ? pf->high : f,
+								pg->var == v ? pg->high : g,
+								ph->var == v ? invertIf(ph->high, isNegative(h)) : h);
 
 		assert(isPositive(low));
 
 		if (low == high)
 		{
 			remember(hsh, f, g, h, low);
-			return referenceNodeID(invertedIf(low, invertResult));
+			// Reference to high no longer needed.
+			dereferenceNodeID(high);
+			return invertIf(low, invertResult);
 		}
 
 		const NodeID resID = fetchNode(v, low, high);
 		remember(hsh, f, g, h, resID);
-		return referenceNodeID(invertedIf(resID, invertResult));
+		return invertIf(resID, invertResult);
 	}
 
 	NodeID Base::iteConst(NodeID f, NodeID g, NodeID h)
@@ -185,14 +210,14 @@ namespace bdd
 		// Testing terminal cases: ite(1, g, _) = ite(_, g, g) = g
 		if (f == one || g == h)
 		{
-			return invertedIf(g, invertResult);
+			return invertIf(g, invertResult);
 		}
 
 		// Check if ite(f, g, h) is in cache.
 		const size_t hsh = hashIte(f, g, h) & (cache_f.size() - 1);
 		if (cache_f[hsh] == f && cache_g[hsh] == g && cache_h[hsh] == h)
 		{
-			return invertedIf(cache_r[hsh], invertResult);
+			return invertIf(cache_r[hsh], invertResult);
 		}
 
 		const Node *pf = getNodePtr(f); assert(pf);
@@ -203,14 +228,14 @@ namespace bdd
 		assert(v != Node::sinkVariable);
 
 		const NodeID low = iteConst(pf->var == v ? pf->low : f,
-							   		pg->var == v ? pg->low : g,
-						  	   		ph->var == v ? invertedIf(ph->low, isNegative(h)) : h);
+									pg->var == v ? pg->low : g,
+									ph->var == v ? invertIf(ph->low, isNegative(h)) : h);
 
 		if (low == nonConst || low != one && low != zero) return nonConst;
 
 		const NodeID high = iteConst(pf->var == v ? pf->high : f,
-						  	   		 pg->var == v ? pg->high : g,
-						  	   		 ph->var == v ? invertedIf(ph->high, isNegative(h)) : h);
+									 pg->var == v ? pg->high : g,
+									 ph->var == v ? invertIf(ph->high, isNegative(h)) : h);
 
 		assert(isPositive(low));
 
@@ -218,12 +243,12 @@ namespace bdd
 
 		remember(hsh, f, g, h, low);
 
-		return invertedIf(low, invertResult);
+		return invertIf(low, invertResult);
 	}
 
 	void Base::referenceNode(Node *node)
 	{
-		// printNodeID(getNodeID(node), "Referencing ");
+		//printNodeID(getNodeID(node), "Referencing ");
 		assert(node);
 		if (node == &sink) return;
 
@@ -232,8 +257,8 @@ namespace bdd
 		if (node->refs == 1)
 		{
 			deadCount--;
-			referenceNode(getNodePtr(node->low ));
-			referenceNode(getNodePtr(node->high));
+			referenceNodeID(node->low );
+			referenceNodeID(node->high);
 		}
 	}
 
@@ -246,11 +271,11 @@ namespace bdd
 		assert(node->refs);
 		if (node->refs == 1)
 		{
-			dereferenceNode(getNodePtr(node->low ));
-			dereferenceNode(getNodePtr(node->high));
-			deadCount++;
+			dereferenceNodeID(node->low );
+			dereferenceNodeID(node->high);
 		}
 		node->refs--;
+		deadCount++;
 		if (deadCount * 2 > table.size()) runGC();
 	}
 

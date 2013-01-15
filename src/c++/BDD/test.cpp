@@ -36,7 +36,7 @@ int main()
 {
 	test(isPositive(b.one));
 	test(isNegative(b.zero));
-	test(b.one == inverted(b.zero));
+	test(b.one == invert(b.zero));
 
 	NodeID x = b.variable(0);
 	NodeID y = b.variable(1);
@@ -48,19 +48,19 @@ int main()
 	test(getNodePtr(x)->high == b.zero);
 	test(x == b.dereferenceNodeID(b.ite(x, b.one, b.zero)));
 
-	NodeID nx = b.referenceNodeID(inverted(x));
-	NodeID ny = b.referenceNodeID(inverted(y));
-	NodeID nz = b.referenceNodeID(inverted(z));
+	NodeID nx = b.referenceNodeID(invert(x));
+	NodeID ny = b.referenceNodeID(invert(y));
+	NodeID nz = b.referenceNodeID(invert(z));
 
-	test(x == inverted(nx));
-	test(y == inverted(ny));
-	test(z == inverted(nz));
+	test(x == invert(nx));
+	test(y == invert(ny));
+	test(z == invert(nz));
 
 	test(ny == b.dereferenceNodeID(b.ite(y, b.zero, b.one)));
 
 	NodeID x_and_y = b.ite(x, y, b.zero);
 	NodeID nx_or_ny = b.ite(nx, b.one, ny);
-	NodeID not_nx_or_ny = b.referenceNodeID(inverted(nx_or_ny));
+	NodeID not_nx_or_ny = b.referenceNodeID(invert(nx_or_ny));
 
 	test(x_and_y == b.dereferenceNodeID(b.andGate(x, y)));
 	test(nx_or_ny == b.dereferenceNodeID(b.orGate(nx, ny)));

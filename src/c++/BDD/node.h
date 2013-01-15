@@ -19,23 +19,20 @@ namespace bdd
 	// BDD node ID inversion bit manipulations.
 	inline bool   isPositive(NodeID id)         { return ((intptr_t)id & 1) == 0;    }
 	inline bool   isNegative(NodeID id)         { return ((intptr_t)id & 1) == 1;    }
-	inline NodeID inverted  (NodeID id)         { return (NodeID)((intptr_t)id ^ 1); }
-	inline NodeID invertedIf(NodeID id, bool c) { return (NodeID)((intptr_t)id ^ c); }
-
-	inline void invert(NodeID &id) { id = inverted(id); }
+	inline NodeID invert    (NodeID id)         { return (NodeID)((intptr_t)id ^ 1); }
+	inline NodeID invertIf  (NodeID id, bool c) { return (NodeID)((intptr_t)id ^ c); }
 
 	// BDD node with reference counter.
 	struct Node
 	{
-		NodeID low;
-		NodeID high;
+		NodeID low, high;
 
 		int var;
 		unsigned refs;
 
 		static const int sinkVariable = std::numeric_limits<int>::max();
 
-		Node(NodeID low, NodeID high, int var,	unsigned refs) : low(low), high(high), var(var), refs(refs)
+		Node(NodeID low, NodeID high, int var, unsigned refs) : low(low), high(high), var(var), refs(refs)
 		{
 			assert(isPositive(low));
 		}
@@ -58,14 +55,6 @@ namespace bdd
 	inline size_t hashNodePtr(const Node *node)
 	{
 		return hashNodeID(node->low) ^ hashNodeID(node->high) ^ std::hash<int>()(node->var);
-	}
-
-	// A total order on BDD nodes.
-	inline bool cmpNodeID(NodeID f, NodeID g)
-	{
-		auto pf = getNodePtr(f);
-		auto pg = getNodePtr(g);
-		return (pf->var < pg->var) || (pf->var == pg->var && f < g);
 	}
 
 	// Comparing two nodes for equality.

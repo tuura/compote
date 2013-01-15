@@ -22,7 +22,7 @@
     [
         {
         	"name" : "bdd: C++",
-            "cmd": ["g++", "-std=c++0x", "-c", "${file}", "-o", "${project_path}/bin/c++/${file_base_name}.o"],
+            "cmd": ["g++", "-std=c++0x", "-c", "${file}", "-o", "${project_path}\\bin\\c++\\${file_base_name}.o"],
 			"file_regex": "^(..[^:]*):([0-9]+):?([0-9]+)?:? (.*)$",
 			"working_dir": "${file_path}",
 			"selector": "source.c, source.c++",
@@ -30,7 +30,7 @@
 			[
 				{
 					"name": "Run",
-					"cmd": ["bash", "-c", "g++ -std=c++0x '${file}' '${project_path}/bin/c++/*.o' -o '${project_path}/bin/c++/${file_base_name}.exe' && '${project_path}/bin/c++/${file_base_name}.exe'"]
+					"cmd": ["bash", "-c", "g++ -std=c++0x '${file}' '${project_path}\\bin\\c++\\*.o' -o '${project_path}\\bin\\c++/${file_base_name}.exe' && '${project_path}\\bin\\c++/${file_base_name}.exe'"]
 				}
 			]
         }
@@ -38,9 +38,9 @@
         {
         	"name" : "bdd: Haskell",
             "cmd": ["ghc", "--make", "-c", "${file}",
-            		"-idir ${project_path}/src/haskell",
-            		"-odir ${project_path}/bin/haskell",
-            		"-hidir ${project_path}/bin/haskell"],
+            		"-idir ${project_path}\\src\\haskell",
+            		"-odir ${project_path}\\bin\\haskell",
+            		"-hidir ${project_path}\\bin\\haskell"],
 			"file_regex": "^(...*?):([0-9]*):?([0-9]*)",
 			"working_dir": "${file_path}",
 			"selector": "source.haskell",
@@ -48,7 +48,7 @@
 			[
 				{
 					"name": "Run",
-					"cmd": ["bash", "-c", "ghc --make '${file}' -lstdc++ '${project_path}/bin/c++/*.o' -odir '${project_path}/bin/haskell' -hidir '${project_path}/bin/haskell' -o '${project_path}/bin/haskell/${file_base_name}.exe' -i'${project_path}/src/haskell' && '${project_path}/bin/haskell/${file_base_name}.exe'"]
+					"cmd": ["bash", "-c", "ghc --make '${file}' -lstdc++ '${project_path}\\bin\\c++\\*.o' -odir '${project_path}\\bin\\haskell' -hidir '${project_path}\\bin\\haskell' -o '${project_path}\\bin\\haskell/${file_base_name}.exe' -i'${project_path}\\src\\haskell' && '${project_path}\\bin\\haskell/${file_base_name}.exe'"]
 				}
 			]
         }

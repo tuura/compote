@@ -67,6 +67,9 @@ instance (Ord a, Eq b, Boolean b) => NormalForm (PG a b) where
 						   where
 								arcs = foldr (˽) ε $ map (\((u, v), x) -> x ? (vertex u ~> vertex v)) q
 
+-- For unicode support in GHCi execute:
+-- System.IO.hSetEncoding System.IO.stdout System.IO.utf8
+
 instance (Show a, Show b) => Show (PG a b) where
 	showsPrec _ Epsilon         = showChar 'ε'
 	showsPrec _ (Vertex v)      = shows v

@@ -77,4 +77,3 @@ instance (Ord a, Boolean b) => Overlay [(a, b)] where
 instance (Eq b, Boolean b) => Condition [(a, b)] where
 	type Parameter [(a, b)] = b
 	x ? p = filter (\(_, x) -> (x /= false)) $ map (\(v, y) -> (v, x && y)) p
-

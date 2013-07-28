@@ -25,6 +25,10 @@ namespace bdd
 	// BDD node with reference counter.
 	struct Node
 	{
+		// node invariants:
+		// 1) low is positive
+		// 2) low != high
+		// 3) refs != std::numeric_limits<unsigned>::max()
 		NodeID low, high;
 
 		int var;
@@ -35,10 +39,14 @@ namespace bdd
 		Node(NodeID low, NodeID high, int var, unsigned refs) : low(low), high(high), var(var), refs(refs)
 		{
 			assert(isPositive(low));
+			assert(low != high);
+			assert(refs != std::numeric_limits<unsigned>::max());
 		}
 		Node(const Node &node) : low(node.low), high(node.high), var(node.var), refs(node.refs)
 		{
 			assert(isPositive(low));
+			assert(low != high);
+			assert(refs != std::numeric_limits<unsigned>::max());
 		}
 	};
 

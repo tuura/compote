@@ -12,7 +12,7 @@
 namespace bdd
 {
 	Base::Base(size_t cacheSize)
-		: sink(getNodeID(nullptr), getNodeID(nullptr), Node::sinkVariable, 1)
+		: sink(getNodeID(nullptr), invert(getNodeID(nullptr)), Node::sinkVariable, 1) // invert to maintain low != high invariant
 		, one(getNodeID(&sink))
 		, zero(invert(one))
 		, cache_f(cacheSize, zero)
@@ -51,6 +51,8 @@ namespace bdd
 		return f < g;
 	}
 
+	// Converts ite(f, g, h) into canonical form.
+	// Returns true if the result must be inverted.
 	bool Base::canonise(NodeID &f, NodeID &g, NodeID &h) const
 	{
 		// Detecting implicit constants:
@@ -127,8 +129,12 @@ namespace bdd
 
 	inline size_t hashIte(NodeID f, NodeID g, NodeID h) { return hashNodeID(f) ^ hashNodeID(g) ^ hashNodeID(h); }
 
+	// Fetch the node from the hash table, or create a new one.
+	// Reference counter of the returned node is incremented.
 	NodeID Base::fetchNode(int v, NodeID low, NodeID high)
 	{
+		assert(low != high);
+
 		// Check if the hash table contains node (v, low, high)
 		Node node(low, high, v, 1), *res = nullptr;
 
@@ -136,22 +142,28 @@ namespace bdd
 
 		if (it == table.end())
 		{
+			// TODO: Not thread-safe (this node could have already been created in another thread).
 			res = new Node(node);
 			// printNodeID(getNodeID(res), "New node created: ");
 			table.insert(res);
+			referenceNodeID(res->low);
+			referenceNodeID(res->high);
 		}
 		else
 		{
 			res = *it;
-			// TODO: Not thread-safe (if a dead node is found it can be removed by GC before the increment below secures its live).
-			res->refs++;
+			// TODO: Not thread-safe (if a dead node is found it can be removed by GC before the increment below revives it).
+			referenceNode(res);
 		}
 
 		assert(res);
+		assert(res->refs);
 
 		return getNodeID(res);
 	}
 
+	// Construct BDD for function ite(f, g, h) = f g + ¬f h.
+	// Reference counter of the returned node is incremented.
 	NodeID Base::ite(NodeID f, NodeID g, NodeID h)
 	{
 		const bool invertResult = canonise(f, g, h);
@@ -160,16 +172,15 @@ namespace bdd
 		// Testing terminal cases: ite(1, g, _) = ite(_, g, g) = g
 		if (f == one || g == h)
 		{
-			referenceNodeID(g);
-			return invertIf(g, invertResult);
+			return invertIf(referenceNodeID(g), invertResult);
 		}
 
 		// Check if ite(f, g, h) is in cache.
 		const size_t hsh = hashIte(f, g, h) & (cache_f.size() - 1);
 		if (cache_f[hsh] == f && cache_g[hsh] == g && cache_h[hsh] == h)
 		{
-			referenceNodeID(cache_r[hsh]);
-			return invertIf(cache_r[hsh], invertResult);
+			// TODO: Not thread-safe (cache_r[hsh] might have been rewritten in other thread).
+			return invertIf(referenceNodeID(cache_r[hsh]), invertResult);
 		}
 
 		const Node *pf = getNodePtr(f); assert(pf);
@@ -188,20 +199,24 @@ namespace bdd
 								ph->var == v ? invertIf(ph->high, isNegative(h)) : h);
 
 		assert(isPositive(low));
+		dereferenceNodeID(high);
 
 		if (low == high)
 		{
 			remember(hsh, f, g, h, low);
-			// Reference to high no longer needed.
-			dereferenceNodeID(high);
 			return invertIf(low, invertResult);
 		}
 
+		dereferenceNodeID(low);
 		const NodeID resID = fetchNode(v, low, high);
 		remember(hsh, f, g, h, resID);
 		return invertIf(resID, invertResult);
 	}
 
+	// Check if function ite(f, g, h) = f g + ¬f h is constant.
+	// Returns 0, 1, or a non-constant node ID, not necessarily equal to ite(f, g, h).
+	// No intermediate BDD nodes are created in the process.
+	// Reference counter of the returned node is NOT incremented.
 	NodeID Base::iteConst(NodeID f, NodeID g, NodeID h)
 	{
 		const bool invertResult = canonise(f, g, h);
@@ -217,6 +232,7 @@ namespace bdd
 		const size_t hsh = hashIte(f, g, h) & (cache_f.size() - 1);
 		if (cache_f[hsh] == f && cache_g[hsh] == g && cache_h[hsh] == h)
 		{
+			// TODO: Not thread-safe (cache_r[hsh] might have been rewritten in other thread).
 			return invertIf(cache_r[hsh], invertResult);
 		}
 
@@ -248,7 +264,7 @@ namespace bdd
 
 	void Base::referenceNode(Node *node)
 	{
-		//printNodeID(getNodeID(node), "Referencing ");
+		// printNodeID(getNodeID(node), "Referencing ");
 		assert(node);
 		if (node == &sink) return;
 
@@ -257,6 +273,7 @@ namespace bdd
 		if (node->refs == 1)
 		{
 			deadCount--;
+			assert(node->low != node->high);
 			referenceNodeID(node->low );
 			referenceNodeID(node->high);
 		}
@@ -271,12 +288,13 @@ namespace bdd
 		assert(node->refs);
 		if (node->refs == 1)
 		{
+			assert(node->low != node->high);
 			dereferenceNodeID(node->low );
 			dereferenceNodeID(node->high);
+			deadCount++;
 		}
 		node->refs--;
-		deadCount++;
-		if (deadCount * 2 > table.size()) runGC();
+		if (deadCount * 2 > table.size() + 1000) runGC();
 	}
 
 	void Base::runGC()
@@ -318,10 +336,11 @@ namespace bdd
 		{
 			Node *node = *it;
 			// printNodeID(getNodeID(node), "Node deleted: ");
+			if (!node->refs) deadCount--;
 			delete node;
 			it = table.erase(it);
 		}
 
-		deadCount = 0;
+		assert(!deadCount);
 	}
 }

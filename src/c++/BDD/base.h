@@ -11,7 +11,7 @@
 
 namespace bdd
 {
-	class Base //final
+	class Base // TODO: make class final (need GCC > 4.6.1)
 	{
 		// The only sink node in the BDD, representing constant 1 function.
 		const Node sink;

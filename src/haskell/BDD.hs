@@ -12,7 +12,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module BDD (Node, setCacheSize, runGC, clear) where
+module BDD (Node, setCacheSize) where
 
 import Control.Monad
 import Prelude hiding (and, or, not)
@@ -53,12 +53,6 @@ getNode id = fmap Node $ newForeignPtr dereferenceID id
 
 foreign import ccall unsafe "setCacheSize"
 	setCacheSize :: CSize -> IO ()
-
-foreign import ccall unsafe "runGC"
-	runGC :: IO ()
-
-foreign import ccall unsafe "clear"
-	clear :: IO ()
 
 foreign import ccall unsafe "one"
 	oneID :: IO NodeID
@@ -103,4 +97,4 @@ instance Enum v => Predicate (Node v) where
 	iteTrue  = iteTrue'
 
 instance Eq (Node v) where
-	p == q = (getID p) == (getID q)
+	p == q = getID p == getID q

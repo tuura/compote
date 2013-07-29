@@ -11,7 +11,7 @@ import Prelude hiding (not, (&&), (||))
 
 x = variable 0
 y = variable 1
-z = (variable 2) :: Node Int
+z = variable 2 :: Node Int
 
 x' = not x
 y' = not y
@@ -25,15 +25,11 @@ main = do
 	   test $ (true :: Node Int) /= false
 	   test $ x == not x'
 	   test $ x' == ite x false true
-	   test $ (x && y) == (not (x' || y'))
+	   test $ (x && y) == not (x' || y')
 	   test $ (x && z || y && z') == (x && y || x && z || y && z')
 	   setCacheSize 65536
 	   test $ ((x `xor` y) `xor` (x `xor` y')) == true
 	   test $ (x && y) `imply` x
 	   test $ x' `imply` (x' || y')
 	   test $ iteTrue (x && x') false true
-	   putStrLn "GC..."
-	   runGC
-	   putStrLn "Clearing..."
-	   clear
 	   putStrLn "Done"

@@ -13,7 +13,7 @@ import Elements
 import NormalForm
 import PS
 import Data.Algebra.Boolean
-import Prelude hiding ((&&), (||))
+import Prelude hiding ((&&), (||), not)
 
 data PG a b = Epsilon
 			| Vertex a
@@ -53,8 +53,8 @@ instance (Boolean b) => Vertex (PGNF a b) where
 instance (Ord a, Boolean b) => Overlay (PGNF a b) where
 	PGNF (p1, p2) ˽ PGNF (q1, q2) = PGNF (p1 ˽ q1, p2 ˽ q2)
 
-instance (Ord a, Boolean b) => Sequence (PGNF a b) where
-	PGNF (p1, p2) ~> PGNF (q1, q2) = PGNF (p1 ˽ q1, [ ((from, to), x && y) | (from, x) <- p1, (to, y) <- q1 ] ˽ (p2 ˽ q2))
+instance (Ord a, Eq b, Boolean b) => Sequence (PGNF a b) where
+	PGNF (p1, p2) ~> PGNF (q1, q2) = PGNF (p1 ˽ q1, [ ((from, to), x && y) | (from, x) <- p1, (to, y) <- q1, (x && y) /= false ] ˽ (p2 ˽ q2))
 
 instance (Eq b, Boolean b) => Condition (PGNF a b) where
 	type Parameter (PGNF a b) = b

@@ -5,25 +5,44 @@
 	Description: Testing PGs.
 -}
 
-import Test.Framework (defaultMain, testGroup)
-import Test.Framework.Providers.HUnit
-import Test.Framework.Providers.QuickCheck (testProperty)
+import PG
+import Elements
+import Predicate
+import BDD
+import Prelude hiding (not, (&&), (||))
 
-import Test.QuickCheck
-import Test.HUnit
+x = variable 0 :: Node Int
+y = variable 1 :: Node Int
+z = variable 2 :: Node Int
 
-main = defaultMain tests
+x' = not x
+y' = not y
+z' = not z
 
-tests = [
-		testGroup "Equality tests"
-			[
-			testCase "Epsilon" test_sort7
-			],
-	    testGroup "Sorting Group 2" [
-	                testProperty "sort4" prop_sort4,
-	                testProperty "sort5" prop_sort5,
-	                testProperty "sort6" prop_sort6,
-	                testCase "sort7" test_sort7,
-	                testCase "sort8" test_sort8
-            ]
-    ]
+a = Vertex "a" :: PG String (Node Int)
+b = Vertex "b"
+c = Vertex "c"
+
+test :: Bool -> IO ()
+test True = putStrLn "OK"
+test False = putStrLn "FAIL"
+
+main = do
+	   test $ a == a
+	   test $ a /= b
+	   test $ x ? a ˽ x' ? a == a
+	   test $ a ~> b ~> c == a ~> b ˽ a ~> c ˽ b ~> c
+	   test $ a ~> b ~> c /= a ~> b ˽ b ~> c
+	   test $ x ? (a ˽ b) == x ? a ˽ x ? b
+	   test $ (x && z || y && z') == (x && y || x && z || y && z')
+	   test $ (x && z || y && z') ? a == (x && y || x && z || y && z') ? a
+	   test $ x ? z ? a ˽ y ? z' ? a == x ? y ? a ˽ x ? z ? a ˽ y ? z' ? a
+	   test $ (x && x') == false
+	   test $ (x ? a) ~> (x' ? b) == (x ? a) ˽ (x' ? b)
+	   test $ (true ? a) ~> (false ? b) == a
+	   test $ x ? (a ~> b) ˽ x' ? (a ~> c) == a ~> (x ? b ˽ x' ? c)
+	   test $ x ? a ~> y ? b == x ? a ˽ y ? b ˽ (x && y) ? (a ~> b)
+	   test $ x ? x' ? a == ε
+	   test $ x ? ε == (ε :: PG String (Node Int))
+	   test $ x ? (ε ˽ a) == x ? a
+	   putStrLn "Done"
